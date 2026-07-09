@@ -1,0 +1,1286 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#08090d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <title>Κύκλος Επιβίωσης</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #fff8f0;
+      --muted: #bdb3bd;
+      --line: rgba(255, 255, 255, .16);
+      --glass: rgba(12, 13, 18, .76);
+      --black: #08090d;
+      --pink: #ff2f86;
+      --pink-2: #ff7ab8;
+      --green: #16f2a5;
+      --cyan: #40c8ff;
+      --gold: #ffd45e;
+      --danger: #ff4c5b;
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; background: var(--black); color: var(--ink); }
+    body { overflow-x: hidden; }
+    button, input { font: inherit; }
+    button {
+      min-height: 46px;
+      border: 0;
+      border-radius: var(--radius);
+      padding: 0 14px;
+      background: linear-gradient(135deg, var(--pink), #ff9a3d);
+      color: #14040a;
+      font-weight: 950;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 12px 28px rgba(255, 47, 134, .24);
+    }
+    button:active { transform: translateY(1px) scale(.99); }
+    button:disabled { opacity: .45; filter: grayscale(.75); cursor: not-allowed; box-shadow: none; }
+    button.secondary { background: rgba(255, 255, 255, .08); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+    button.danger { background: linear-gradient(135deg, var(--danger), #ff9a3d); color: #180305; }
+    button.icon { width: 46px; padding: 0; display: inline-grid; place-items: center; font-size: 1.35rem; }
+    input[type="text"] {
+      width: 100%;
+      min-height: 44px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .075);
+      color: var(--ink);
+      padding: 0 12px;
+      outline: none;
+    }
+    input:focus, button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+    .app {
+      min-height: 100dvh;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    .app::before {
+      content: "";
+      position: fixed;
+      inset: -18vmax;
+      z-index: -3;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255, 47, 134, .34), transparent 22rem),
+        radial-gradient(circle at 72% 8%, rgba(22, 242, 165, .18), transparent 18rem),
+        linear-gradient(180deg, #141018 0%, #08090d 52%, #0a1111 100%);
+      animation: roomPulse 6s ease-in-out infinite alternate;
+    }
+    .app::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -2;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        repeating-radial-gradient(circle at 50% 62%, rgba(255,255,255,.09) 0 2px, transparent 2px 46px);
+      background-size: 36px 36px, 36px 36px, 100% 100%;
+      mask-image: linear-gradient(180deg, transparent, #000 8%, #000 92%, transparent);
+      animation: gridDrift 14s linear infinite;
+    }
+    @keyframes roomPulse { from { filter: saturate(1); transform: scale(1); } to { filter: saturate(1.25); transform: scale(1.03); } }
+    @keyframes gridDrift { to { background-position: 36px 36px, -36px -36px, 0 0; } }
+
+    .shapes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .55;
+    }
+    .shape { position: absolute; border: 3px solid rgba(255, 255, 255, .38); filter: drop-shadow(0 0 18px rgba(255, 47, 134, .32)); animation: floatShape 8s ease-in-out infinite; }
+    .shape.circle { width: 74px; height: 74px; border-radius: 50%; left: 6%; top: 18%; }
+    .shape.triangle { width: 0; height: 0; border-left: 44px solid transparent; border-right: 44px solid transparent; border-bottom: 76px solid rgba(255,255,255,.28); border-top: 0; right: 8%; top: 16%; }
+    .shape.square { width: 76px; height: 76px; right: 13%; bottom: 12%; animation-delay: -2s; }
+    @keyframes floatShape { 50% { transform: translateY(18px) rotate(8deg); opacity: .95; } }
+
+    .shell { width: min(100%, 980px); margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)); }
+    header { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mark {
+      width: 42px; height: 42px; flex: 0 0 auto; border-radius: 50%;
+      background: conic-gradient(var(--pink), var(--green), var(--cyan), var(--pink));
+      position: relative;
+      animation: spinMark 5s linear infinite;
+      box-shadow: 0 0 26px rgba(255, 47, 134, .45);
+    }
+    .mark::before { content: ""; position: absolute; inset: 9px; border: 3px solid #08090d; background: var(--ink); }
+    .mark::after { content: ""; position: absolute; inset: 18px 9px 9px 18px; background: #08090d; }
+    @keyframes spinMark { to { transform: rotate(360deg); } }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: clamp(1.05rem, 4.5vw, 1.75rem); line-height: .98; text-transform: uppercase; letter-spacing: 0; }
+    h2 { font-size: 1.2rem; line-height: 1.1; text-transform: uppercase; }
+    .subtitle, .subline { color: var(--muted); font-weight: 800; }
+    .subtitle { font-size: .75rem; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .subline { font-size: .82rem; margin-top: 5px; }
+    .status { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: rgba(0, 0, 0, .34);
+      font-size: .74rem;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+    .install-btn { display: none; }
+    .install-btn.ready { display: inline-grid; place-items: center; }
+
+    main { margin-top: 12px; }
+    .view { display: none; animation: viewIn .34s ease both; }
+    .view.active { display: block; }
+    @keyframes viewIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .band {
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035)), var(--glass);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 90px rgba(0,0,0,.34);
+      padding: 14px;
+    }
+
+    .setup-top { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .count-row { display: grid; grid-template-columns: 46px 1fr 46px; gap: 10px; align-items: center; margin-top: 14px; }
+    .count-box {
+      min-height: 88px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.18);
+      background: linear-gradient(135deg, rgba(255,47,134,.16), rgba(22,242,165,.09));
+    }
+    .count-value { display: block; color: var(--green); font-size: 2.6rem; line-height: 1; font-weight: 1000; text-shadow: 0 0 22px rgba(22,242,165,.45); }
+    .count-label { display: block; margin-top: 5px; color: var(--muted); font-size: .76rem; font-weight: 900; text-transform: uppercase; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .actions.single { grid-template-columns: 1fr; }
+
+    .player-editor, .player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; }
+    .editor-card, .player-card, .finalist {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.075);
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .editor-card {
+      padding: 9px;
+      animation: cardPop .42s ease both;
+      display: grid;
+      gap: 8px;
+      color: var(--ink);
+      text-align: center;
+      box-shadow: none;
+      min-height: 132px;
+      align-content: center;
+      justify-items: center;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .editor-card.selected {
+      border-color: var(--green);
+      background: linear-gradient(180deg, rgba(22,242,165,.19), rgba(255,47,134,.08));
+      transform: translateY(-2px);
+      box-shadow: 0 0 26px rgba(22,242,165,.18);
+    }
+    @keyframes cardPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+    .editor-avatar { display: grid; place-items: center; }
+    .avatar, .tiny-avatar {
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: #101316;
+      font-weight: 1000;
+      background: linear-gradient(135deg, var(--pink), var(--green));
+      border: 2px solid rgba(255,255,255,.68);
+      text-transform: uppercase;
+      box-shadow: 0 0 0 3px rgba(255,47,134,.16), 0 12px 22px rgba(0,0,0,.3);
+    }
+    .avatar { width: 58px; height: 58px; font-size: 1.1rem; }
+    .tiny-avatar { width: 38px; height: 38px; flex: 0 0 auto; font-size: .8rem; }
+    .avatar img, .tiny-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .select-badge {
+      border-radius: 999px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .editor-card.selected .select-badge {
+      color: #07100d;
+      background: var(--green);
+      border-color: transparent;
+    }
+
+    .round-hero {
+      min-height: calc(100dvh - 92px);
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      padding: 28px 12px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(circle at 50% 58%, rgba(255, 47, 134, .22), transparent 19rem),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      position: relative;
+      overflow: hidden;
+    }
+    .round-hero::before {
+      content: "";
+      position: absolute;
+      width: min(86vw, 560px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 18px solid rgba(255, 255, 255, .08);
+      background:
+        repeating-conic-gradient(from 0deg, rgba(255,47,134,.24) 0 14deg, rgba(22,242,165,.12) 14deg 28deg),
+        radial-gradient(circle, transparent 0 38%, rgba(0,0,0,.32) 39% 42%, transparent 43%);
+      bottom: -28%;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: floorSpin 18s linear infinite;
+    }
+    .round-hero > * { position: relative; z-index: 1; }
+    @keyframes floorSpin { to { transform: translateX(-50%) rotate(360deg); } }
+    .round-kicker { color: var(--muted); font-weight: 950; letter-spacing: .16em; text-transform: uppercase; font-size: .76rem; }
+    .target {
+      margin-top: 10px;
+      font-size: clamp(6rem, 32vw, 14rem);
+      line-height: .78;
+      font-weight: 1000;
+      color: var(--green);
+      text-shadow: 0 0 18px rgba(22,242,165,.7), 0 18px 70px rgba(0,0,0,.7);
+      animation: numberPunch 1s ease infinite alternate;
+    }
+    @keyframes numberPunch { to { transform: scale(1.035); filter: brightness(1.18); } }
+    .target-title {
+      margin-top: 12px;
+      font-size: clamp(1.55rem, 7.8vw, 4.4rem);
+      line-height: .95;
+      font-weight: 1000;
+      text-transform: uppercase;
+      text-shadow: 0 0 26px rgba(255,47,134,.42);
+    }
+    .timer { width: min(100%, 460px); margin-top: 24px; }
+    .timer-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-weight: 950; }
+    .time-left { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 1.15rem; }
+    .bar { height: 14px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.18); }
+    .bar > span { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--green), var(--gold), var(--danger)); transition: width .22s linear; box-shadow: 0 0 20px rgba(22,242,165,.4); }
+    .round-actions { display: grid; grid-template-columns: 1fr; gap: 10px; width: min(100%, 460px); margin-top: 18px; }
+    .pulse-note { margin-top: 12px; color: var(--muted); font-weight: 850; font-size: .82rem; }
+
+    .countdown-flash {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 8;
+      background: radial-gradient(circle, rgba(255,47,134,.24), rgba(0,0,0,.78));
+      pointer-events: none;
+    }
+    .countdown-flash.show { display: grid; animation: flashFade .7s ease both; }
+    .countdown-flash span { font-size: clamp(5rem, 35vw, 15rem); line-height: 1; font-weight: 1000; color: var(--ink); text-shadow: 0 0 40px rgba(255,47,134,.8); animation: flashPop .68s ease both; }
+    @keyframes flashFade { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes flashPop { from { transform: scale(.7); } 50% { transform: scale(1.12); } to { transform: scale(.92); } }
+    .spark {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      z-index: 10;
+      pointer-events: none;
+      background: var(--green);
+      box-shadow: 0 0 14px currentColor;
+      animation: sparkFly .62s ease-out forwards;
+    }
+    @keyframes sparkFly {
+      to {
+        transform: translate(var(--dx), var(--dy)) scale(.15);
+        opacity: 0;
+      }
+    }
+
+    .validation-layout { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .validation-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .player-card {
+      min-height: 92px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 9px;
+      text-align: left;
+      color: var(--ink);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      box-shadow: none;
+    }
+    .player-card.selected { border-color: var(--green); background: rgba(22,242,165,.14); transform: translateY(-2px); box-shadow: 0 0 22px rgba(22,242,165,.16); }
+    .player-card.locked { color: #0c1010; border-color: rgba(255,255,255,.46); animation: lockPulse .32s ease both; }
+    @keyframes lockPulse { 50% { transform: scale(1.04); } }
+    .player-name { display: block; font-weight: 1000; line-height: 1.08; overflow-wrap: anywhere; }
+    .player-meta { display: block; margin-top: 4px; opacity: .78; font-size: .72rem; font-weight: 950; text-transform: uppercase; }
+    .side { display: grid; gap: 10px; }
+    .group-list, .candidate-list, .final-list { display: grid; gap: 8px; }
+    .group-chip, .candidate-chip {
+      border-radius: var(--radius);
+      padding: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.075);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      animation: viewIn .24s ease both;
+    }
+    .group-chip { color: #101316; font-weight: 950; }
+    .candidate-chip { border-color: rgba(255,76,91,.34); background: rgba(255,76,91,.09); }
+    .names { overflow-wrap: anywhere; line-height: 1.2; font-weight: 900; }
+    .empty { min-height: 50px; display: grid; place-items: center; text-align: center; padding: 8px; border: 1px dashed rgba(255,255,255,.22); border-radius: var(--radius); color: var(--muted); font-weight: 900; }
+
+    .winner-stage { min-height: calc(100dvh - 110px); display: grid; align-content: center; gap: 18px; text-align: center; position: relative; overflow: hidden; }
+    .winner-stage::before { content: ""; position: absolute; inset: -20%; background: conic-gradient(from 90deg, transparent, rgba(255,47,134,.2), transparent, rgba(22,242,165,.18), transparent); animation: floorSpin 12s linear infinite; }
+    .winner-stage > * { position: relative; z-index: 1; }
+    .final-list { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .finalist { padding: 16px; display: grid; justify-items: center; gap: 10px; background: rgba(255,255,255,.09); }
+    .finalist .avatar { width: 92px; height: 92px; font-size: 1.7rem; }
+    .placements-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+      gap: 10px;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.16);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)),
+        radial-gradient(circle at 50% 0%, rgba(22,242,165,.14), transparent 42%);
+      overflow: hidden;
+      position: relative;
+    }
+    .placement-card {
+      min-width: 0;
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+      text-align: center;
+      animation: viewIn .42s ease both;
+    }
+    .placement-card.winner .avatar {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(22,242,165,.2), 0 0 28px rgba(22,242,165,.36);
+      animation: numberPunch 1.3s ease infinite alternate;
+    }
+    .placement-card.out .avatar { filter: grayscale(.8); opacity: .82; }
+    .placement-card .avatar { width: 74px; height: 74px; }
+    .placement-place { color: var(--gold); font-size: .85rem; font-weight: 1000; text-transform: uppercase; }
+    .placement-meta { color: var(--muted); font-size: .72rem; font-weight: 850; line-height: 1.15; }
+    .elimination-stage {
+      min-height: calc(100dvh - 110px);
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,76,91,.28), transparent 18rem),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025));
+      animation: dangerBreath 1.2s ease-in-out infinite alternate;
+    }
+    .elimination-stage::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: repeating-conic-gradient(from 0deg, rgba(255,76,91,.18) 0 10deg, transparent 10deg 20deg);
+      animation: floorSpin 10s linear infinite;
+    }
+    .elimination-stage > * { position: relative; z-index: 1; }
+    .elimination-title {
+      font-size: clamp(2.4rem, 13vw, 6rem);
+      line-height: .9;
+      color: var(--danger);
+      text-transform: uppercase;
+      font-weight: 1000;
+      text-shadow: 0 0 30px rgba(255,76,91,.8), 0 22px 70px rgba(0,0,0,.7);
+      animation: numberPunch .5s ease infinite alternate;
+    }
+    .eliminated-list {
+      width: min(100%, 560px);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      gap: 10px;
+    }
+    .eliminated-card {
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,76,91,.5);
+      background: rgba(255,76,91,.12);
+      padding: 12px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      animation: eliminatedDrop .48s ease both;
+    }
+    .eliminated-card .avatar { width: 72px; height: 72px; filter: grayscale(.85); }
+    @keyframes dangerBreath {
+      to { box-shadow: 0 0 45px rgba(255,76,91,.28), inset 0 0 40px rgba(255,76,91,.08); }
+    }
+    .elimination-countdown {
+      min-width: 76px;
+      min-height: 76px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.38);
+      color: var(--gold);
+      font-size: 2.2rem;
+      font-weight: 1000;
+      text-shadow: 0 0 24px rgba(255,212,94,.7);
+      background: rgba(0,0,0,.28);
+      box-shadow: 0 0 30px rgba(255,76,91,.22);
+    }
+    @keyframes eliminatedDrop { from { opacity: 0; transform: translateY(-18px) scale(1.08); } to { opacity: 1; transform: none; } }
+    .toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 7;
+      border-radius: var(--radius);
+      background: rgba(10, 12, 16, .94);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      box-shadow: 0 20px 70px rgba(0,0,0,.45);
+      transform: translateY(145%);
+      transition: transform .22s ease;
+      font-weight: 900;
+    }
+    .toast.show { transform: translateY(0); }
+
+    @media (min-width: 760px) {
+      .shell { padding-inline: 22px; }
+      .setup-top { grid-template-columns: 320px 1fr; align-items: start; }
+      .validation-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+    }
+    @media (max-width: 420px) {
+      .shell { padding-inline: 10px; }
+      .player-editor, .player-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .editor-card, .player-card { padding: 8px; }
+      .player-card { grid-template-columns: 38px 1fr; }
+      .actions { grid-template-columns: 1fr; }
+      .status { display: none; }
+      .round-hero { min-height: calc(100dvh - 86px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shapes" aria-hidden="true">
+      <div class="shape circle"></div>
+      <div class="shape triangle"></div>
+      <div class="shape square"></div>
+    </div>
+    <div class="shell">
+      <header>
+        <div class="brand">
+          <div class="mark" aria-hidden="true"></div>
+          <div>
+            <h1>Κύκλος Επιβίωσης</h1>
+            <p class="subtitle">Διάλεξε ομάδα. Πρόλαβε τον χρόνο.</p>
+          </div>
+        </div>
+        <div class="status" aria-live="polite">
+          <button class="secondary install-btn" id="installApp">Εγκατάσταση</button>
+          <span class="pill" id="roundPill">Προετοιμασία</span>
+          <span class="pill" id="alivePill">0 ενεργοί</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="view active" id="setupView">
+          <div class="setup-top">
+            <div class="band">
+              <h2>Παίκτες</h2>
+              <p class="subline">4 έως 26 συμμετέχοντες</p>
+              <div class="count-row">
+                <button class="icon secondary" id="minusPlayers" aria-label="Μείωση παικτών">-</button>
+                <div class="count-box">
+                  <span class="count-value" id="playerCountValue">8</span>
+                  <span class="count-label">Συμμετέχοντες</span>
+                </div>
+                <button class="icon secondary" id="plusPlayers" aria-label="Αύξηση παικτών">+</button>
+              </div>
+              <div class="actions single">
+                <button id="startGame">Έναρξη</button>
+              </div>
+              <p class="pulse-note">Η φωνή ενεργοποιείται μετά το πρώτο πάτημα.</p>
+            </div>
+            <div class="band">
+              <div class="validation-head">
+                <div>
+                  <h2>Χαρακτήρες</h2>
+                  <p class="subline" id="selectStatus">Διάλεξε ακριβώς 8 χαρακτήρες</p>
+                </div>
+                <button class="secondary" id="clearSelection">Καθαρισμός</button>
+              </div>
+              <div class="player-editor" id="playerEditor"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="roundView">
+          <div class="round-hero">
+            <p class="round-kicker" id="roundLabel">Γύρος 1</p>
+            <div class="target" id="targetNumber">3</div>
+            <div class="target-title" id="targetTitle">Ομάδες των 3</div>
+            <div class="timer" aria-live="polite">
+              <div class="timer-top">
+                <span>Χρόνος</span>
+                <span class="time-left" id="timeLeft">60</span>
+              </div>
+              <div class="bar"><span id="timerBar"></span></div>
+            </div>
+            <div class="round-actions">
+              <button class="secondary" id="endTimer">Τέλος χρόνου</button>
+            </div>
+            <p class="pulse-note">Η αντίστροφη μέτρηση ξεκινά αυτόματα.</p>
+          </div>
+        </section>
+
+        <section class="view" id="validateView">
+          <div class="validation-layout">
+            <div class="band">
+              <div class="validation-head">
+                <div>
+                  <h2 id="validateTitle">Ομάδες των 3</h2>
+                  <p class="subline" id="selectionLine">0 / 3 επιλεγμένοι</p>
+                </div>
+                <button class="secondary" id="clearPick">Καθαρισμός</button>
+              </div>
+              <div class="player-grid" id="aliveGrid"></div>
+            </div>
+            <div class="side">
+              <div class="band">
+                <div class="validation-head">
+                  <div>
+                    <h2>Έγκυρες</h2>
+                    <p class="subline" id="groupCount">0 ομάδες</p>
+                  </div>
+                  <button class="secondary" id="undoGroup">Πίσω</button>
+                </div>
+                <div class="group-list" id="groupList"></div>
+              </div>
+              <div class="band">
+                <div class="validation-head">
+                  <div>
+                    <h2>Σε κίνδυνο</h2>
+                    <p class="subline" id="candidateCount">0 υποψήφιοι</p>
+                  </div>
+                </div>
+                <div class="candidate-list" id="candidateList"></div>
+                <div class="actions single">
+                  <button class="danger" id="confirmEliminations">Επιβεβαίωση αποχώρησης</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="gameOverView">
+          <div class="winner-stage band">
+            <div>
+              <p class="round-kicker">Τελικοί επιζώντες</p>
+              <h2 id="finalTitle" style="font-size: clamp(2rem, 10vw, 5rem); margin-top: 8px;">Τελική δυάδα</h2>
+            </div>
+            <div class="final-list" id="finalList"></div>
+            <div>
+              <p class="round-kicker" style="margin-bottom: 10px;">Τελική κατάταξη</p>
+              <div class="placements-board" id="placementsBoard"></div>
+            </div>
+            <div class="actions single">
+              <button id="newGame">Νέο παιχνίδι</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="eliminationView">
+          <div class="elimination-stage band">
+            <p class="round-kicker">Αποχώρηση</p>
+            <div class="elimination-title" id="eliminationTitle">Αποχώρηση</div>
+            <div class="eliminated-list" id="eliminatedList"></div>
+            <p class="pulse-note" id="eliminationLine">Ο επόμενος γύρος φορτώνει...</p>
+            <div class="elimination-countdown" id="eliminationCountdown">10</div>
+            <p class="pulse-note">Ο επόμενος γύρος ξεκινά μετά την αντίστροφη μέτρηση.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="countdown-flash" id="countdownFlash"><span id="flashNumber">3</span></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const minPlayers = 4;
+    const maxPlayers = 26;
+    const roundSeconds = 60;
+    const colors = ["#16f2a5", "#ff2f86", "#40c8ff", "#ffd45e", "#b987ff", "#ff8f70", "#8cff6a", "#ff77c6", "#70f0ff", "#ffb45d"];
+    const spirits = [
+      ["Alex", "char_alex.webp"], ["Billy", "char_billy.webp"], ["Catherine", "char_catherine.png"],
+      ["Demarin", "char_demarin.webp"], ["Elisa", "char_elisa.webp"], ["Eva", "char_eva.png"],
+      ["Evaggelia", "char_evaggelia.png"], ["Evelyn", "char_evelyn.webp"], ["Hope", "char_hope.webp"],
+      ["Irene", "char_irene.png"], ["Jasmine", "char_jasmine.png"], ["Luna", "char_luna.webp"],
+      ["Pauline", "char_pauline.webp"], ["Phillip", "char_phillip.webp"], ["Rino", "char_rino.webp"],
+      ["Sargenie", "char_sargenie.jpeg"], ["Smaragda", "char_smaragda.jpeg"], ["Sorina", "char_sorina.png"],
+      ["Tony", "char_tony.webp"], ["Vicky", "char_vicky.jpg"], ["Violet", "char_violet.png"], ["Zoe", "char_zoe.jpeg"],
+      ["Ester", "char_ester.png"], ["Vincent", "char_vincent.jpg"], ["Ian", "char_ian.png"], ["Paul", "char_paul.png"]
+    ];
+
+    const state = {
+      setupCount: 8,
+      players: [],
+      round: 0,
+      target: 3,
+      secondsLeft: roundSeconds,
+      timer: null,
+      eliminationTimer: null,
+      picked: [],
+      groups: [],
+      placements: [],
+      placementOrder: 0,
+      speechEnabled: true,
+      voice: null,
+      roundMusic: null,
+      victoryMusic: null
+    };
+    let deferredInstallPrompt = null;
+    const $ = (id) => document.getElementById(id);
+    const views = ["setupView", "roundView", "validateView", "eliminationView", "gameOverView"];
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timeout);
+      showToast.timeout = window.setTimeout(() => toast.classList.remove("show"), 2300);
+    }
+
+    function speak(text, rate = .95, pitch = .9) {
+      if (!state.speechEnabled || !("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(ttsText(text));
+      utterance.lang = "en-US";
+      utterance.voice = state.voice || pickVoice();
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.volume = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakSequence(lines, onDone) {
+      if (!state.speechEnabled || !("speechSynthesis" in window)) {
+        if (onDone) window.setTimeout(onDone, Math.max(1400, lines.length * 900));
+        return;
+      }
+      window.speechSynthesis.cancel();
+      let index = 0;
+      const next = () => {
+        if (index >= lines.length) {
+          if (onDone) onDone();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(ttsText(lines[index]));
+        utterance.lang = "en-US";
+        utterance.voice = state.voice || pickVoice();
+        utterance.rate = .88;
+        utterance.pitch = .86;
+        utterance.volume = 1;
+        utterance.onend = () => window.setTimeout(next, 180);
+        index += 1;
+        window.speechSynthesis.speak(utterance);
+      };
+      next();
+    }
+
+    function ttsText(value) {
+      return String(value)
+        .replaceAll("Rino", "Reeno")
+        .replaceAll("Demarin", "Deh mareen")
+        .replaceAll("Elisa", "Elisa Lanchava")
+        .replaceAll("Sargenie", "Sarjeenee")
+        .replaceAll("Sorina", "Soreena")
+        .replaceAll("Evaggelia", "Evangelia")
+        .replaceAll("Zoe", "Zoey")
+        .replaceAll("Pauline", "Polin")
+        .replaceAll("Ester", "Esther")
+        .replaceAll("Ian", "Ee an")
+        .replaceAll("Vincent", "Vincent")
+        .replaceAll("Paul", "Paul");
+    }
+
+    function pickVoice() {
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return null;
+      const preferred = [
+        "Google US English",
+        "Microsoft Jenny Online",
+        "Microsoft Aria Online",
+        "Microsoft Guy Online",
+        "Samantha",
+        "Daniel",
+        "Karen",
+        "English"
+      ];
+      state.voice = preferred
+        .map((name) => voices.find((voice) => voice.name.includes(name)))
+        .find(Boolean)
+        || voices.find((voice) => voice.lang === "en-US" && /natural|online|premium|enhanced/i.test(voice.name))
+        || voices.find((voice) => voice.lang.startsWith("en") && /natural|online|premium|enhanced/i.test(voice.name))
+        || voices.find((voice) => voice.lang.startsWith("en"))
+        || voices[0];
+      return state.voice;
+    }
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = pickVoice;
+      pickVoice();
+    }
+
+    function blip(freq = 520, duration = .08, type = "sine") {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = blip.ctx || (blip.ctx = new AudioContext());
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.12, ctx.currentTime + .01);
+        gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + duration);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration + .02);
+      } catch (_) {}
+    }
+
+    function ensureAudio() {
+      if (!state.roundMusic) {
+        state.roundMusic = new Audio("./assets/audio/round_theme.mp3");
+        state.roundMusic.loop = true;
+        state.roundMusic.volume = .72;
+      }
+      if (!state.victoryMusic) {
+        state.victoryMusic = new Audio("./assets/audio/victory_theme.mp3");
+        state.victoryMusic.loop = false;
+        state.victoryMusic.volume = .86;
+      }
+    }
+
+    function playRoundMusic() {
+      ensureAudio();
+      stopVictoryMusic();
+      state.roundMusic.currentTime = 0;
+      state.roundMusic.play().catch(() => {});
+    }
+
+    function stopRoundMusic() {
+      if (!state.roundMusic) return;
+      state.roundMusic.pause();
+      state.roundMusic.currentTime = 0;
+    }
+
+    function playVictoryMusic() {
+      ensureAudio();
+      stopRoundMusic();
+      state.victoryMusic.currentTime = 0;
+      state.victoryMusic.play().catch(() => {});
+    }
+
+    function stopVictoryMusic() {
+      if (!state.victoryMusic) return;
+      state.victoryMusic.pause();
+      state.victoryMusic.currentTime = 0;
+    }
+
+    function burstFromElement(element, color = "#16f2a5") {
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      for (let i = 0; i < 10; i += 1) {
+        const spark = document.createElement("span");
+        const angle = (Math.PI * 2 * i) / 10;
+        const distance = 28 + Math.random() * 22;
+        spark.className = "spark";
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        spark.style.color = color;
+        spark.style.background = color;
+        spark.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+        spark.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+        document.body.appendChild(spark);
+        window.setTimeout(() => spark.remove(), 700);
+      }
+    }
+
+    function showView(viewId) {
+      views.forEach((id) => $(id).classList.toggle("active", id === viewId));
+      updateHeader();
+    }
+
+    function updateHeader() {
+      const alive = activePlayers().length;
+      $("alivePill").textContent = `${alive} ενεργοί`;
+      $("roundPill").textContent = state.round ? `Γύρος ${state.round}` : "Προετοιμασία";
+    }
+
+    function activePlayers() {
+      return state.players.filter((player) => player.selected && player.alive);
+    }
+
+    function selectedPlayers() {
+      return state.players.filter((player) => player.selected);
+    }
+
+    function initials(name, index) {
+      const clean = name.trim();
+      if (!clean) return String(index + 1);
+      return clean.split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
+    }
+
+    function avatarHTML(player, sizeClass = "avatar") {
+      const label = initials(player.name, player.order);
+      if (player.avatar) return `<div class="${sizeClass}" aria-hidden="true"><img src="${player.avatar}" alt=""></div>`;
+      return `<div class="${sizeClass}" aria-hidden="true">${label}</div>`;
+    }
+
+    function makeSpiritPlayer(index) {
+      const spirit = spirits[index % spirits.length];
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : `p-${Date.now()}-${index}`,
+        order: index,
+        name: spirit[0],
+        avatar: `./assets/characters/${spirit[1]}`,
+        selected: false,
+        alive: true,
+        eliminatedRound: null
+      };
+    }
+
+    function syncEditorCount(nextCount) {
+      state.setupCount = Math.max(minPlayers, Math.min(maxPlayers, nextCount));
+      $("playerCountValue").textContent = state.setupCount;
+      renderEditor();
+      updateHeader();
+    }
+
+    function clearSelection() {
+      state.players.forEach((player) => {
+        player.selected = false;
+        player.alive = true;
+        player.eliminatedRound = null;
+      });
+      document.querySelectorAll("[data-toggle-spirit]").forEach((button) => {
+        const player = state.players.find((item) => item.id === button.dataset.toggleSpirit);
+        if (player) updateSpiritButton(button, player);
+      });
+      updateSelectionStatus();
+      updateHeader();
+      showToast("Η επιλογή καθαρίστηκε.");
+    }
+
+    function updateSelectionStatus() {
+      const selectedCount = selectedPlayers().length;
+      const ready = selectedCount === state.setupCount;
+      $("selectStatus").textContent = ready
+        ? `${selectedCount} επιλεγμένοι. Έτοιμο.`
+        : `${selectedCount} / ${state.setupCount} επιλεγμένοι`;
+      $("startGame").disabled = !ready;
+    }
+
+    function updateSpiritButton(button, player) {
+      button.classList.toggle("selected", player.selected);
+      button.setAttribute("aria-pressed", String(player.selected));
+      const badge = button.querySelector(".select-badge");
+      if (badge) badge.textContent = player.selected ? "Παίζει" : "Πάτα για επιλογή";
+    }
+
+    function renderEditor() {
+      updateSelectionStatus();
+      $("playerEditor").innerHTML = state.players.map((player, index) => `
+        <button class="editor-card ${player.selected ? "selected" : ""}" style="animation-delay:${Math.min(index * 18, 260)}ms" data-toggle-spirit="${player.id}" aria-pressed="${player.selected}">
+          <div class="editor-avatar">
+            ${avatarHTML(player)}
+          </div>
+          <span class="player-name">${escapeAttr(player.name)}</span>
+          <span class="select-badge">${player.selected ? "Παίζει" : "Πάτα για επιλογή"}</span>
+        </button>
+      `).join("");
+      document.querySelectorAll("[data-toggle-spirit]").forEach((button) => {
+        button.addEventListener("click", (event) => toggleSpirit(button.dataset.toggleSpirit, event.currentTarget));
+      });
+    }
+
+    function toggleSpirit(id, button) {
+      const player = state.players.find((item) => item.id === id);
+      if (!player) return;
+      if (!player.selected && selectedPlayers().length >= state.setupCount) {
+        showToast(`Μόνο ${state.setupCount} παίκτες μπορούν να παίξουν.`);
+        blip(180, .08, "sawtooth");
+        return;
+      }
+      player.selected = !player.selected;
+      player.alive = player.selected;
+      player.eliminatedRound = null;
+      blip(player.selected ? 650 : 260, .05, "sine");
+      updateSpiritButton(button, player);
+      updateSelectionStatus();
+      burstFromElement(button, player.selected ? "#16f2a5" : "#ff2f86");
+      updateHeader();
+    }
+
+    function escapeAttr(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+    }
+
+    function startGame() {
+      if (selectedPlayers().length !== state.setupCount) {
+        showToast(`Διάλεξε ακριβώς ${state.setupCount} χαρακτήρες πρώτα.`);
+        return;
+      }
+      state.players.forEach((player) => {
+        player.alive = player.selected;
+        player.eliminatedRound = null;
+      });
+      state.round = 0;
+      state.placements = [];
+      state.placementOrder = 0;
+      ensureAudio();
+      stopVictoryMusic();
+      speak("The game begins. Prepare for the first round.", .9, .9);
+      nextRound();
+    }
+
+    function pickTarget(aliveCount) {
+      const max = Math.min(7, aliveCount);
+      const options = [];
+      for (let size = 2; size <= max; size += 1) options.push(size);
+      const reducing = options.filter((size) => aliveCount % size !== 0);
+      const pool = reducing.length ? reducing : options;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function nextRound() {
+      const aliveCount = activePlayers().length;
+      if (aliveCount <= 2) return finishGame();
+      state.round += 1;
+      state.target = pickTarget(aliveCount);
+      state.secondsLeft = roundSeconds;
+      state.picked = [];
+      state.groups = [];
+      window.clearInterval(state.timer);
+      window.clearInterval(state.eliminationTimer);
+      state.timer = null;
+      state.eliminationTimer = null;
+      $("roundLabel").textContent = `Γύρος ${state.round}`;
+      $("targetNumber").textContent = state.target;
+      $("targetTitle").textContent = `Ομάδες των ${state.target}`;
+      $("timeLeft").textContent = state.secondsLeft;
+      $("timerBar").style.width = "100%";
+      showView("roundView");
+      announceRound();
+      beginTimer();
+    }
+
+    function announceRound() {
+      flash(String(state.target));
+      blip(280 + state.target * 80, .16, "triangle");
+      window.setTimeout(() => speak(`Round ${state.round}. Form groups of ${state.target}. You have sixty seconds. Move now.`, .94, .9), 160);
+    }
+
+    function beginTimer() {
+      if (state.timer) return;
+      playRoundMusic();
+      tickTimer();
+      state.timer = window.setInterval(tickTimer, 1000);
+    }
+
+    function tickTimer() {
+      $("timeLeft").textContent = state.secondsLeft;
+      $("timerBar").style.width = `${Math.max(0, (state.secondsLeft / roundSeconds) * 100)}%`;
+      if ([30, 10, 5, 4, 3, 2, 1].includes(state.secondsLeft)) {
+        flash(String(state.secondsLeft));
+        blip(state.secondsLeft <= 5 ? 820 : 520, .08, "square");
+        if (state.secondsLeft === 30) speak("Thirty seconds remain.", .98, .92);
+        if (state.secondsLeft === 10) speak("Ten seconds.", .98, .92);
+        if (state.secondsLeft <= 5) speak(String(state.secondsLeft), 1.05, .88);
+      }
+      if (state.secondsLeft <= 0) {
+        endTimer();
+        return;
+      }
+      state.secondsLeft -= 1;
+    }
+
+    function flash(text) {
+      $("flashNumber").textContent = text;
+      $("countdownFlash").classList.remove("show");
+      void $("countdownFlash").offsetWidth;
+      $("countdownFlash").classList.add("show");
+    }
+
+    function endTimer() {
+      window.clearInterval(state.timer);
+      state.timer = null;
+      state.secondsLeft = 0;
+      stopRoundMusic();
+      $("timeLeft").textContent = "0";
+      $("timerBar").style.width = "0%";
+      speak("Time is over. Lock the valid groups.", .92, .9);
+      renderValidation();
+      showView("validateView");
+    }
+
+    function playerById(id) { return state.players.find((player) => player.id === id); }
+
+    function renderValidation() {
+      $("validateTitle").textContent = `Ομάδες των ${state.target}`;
+      $("selectionLine").textContent = `${state.picked.length} / ${state.target} επιλεγμένοι`;
+      const locked = new Map();
+      state.groups.forEach((group, groupIndex) => group.ids.forEach((id) => locked.set(id, { color: group.color, number: groupIndex + 1 })));
+      const alivePlayers = activePlayers();
+      $("aliveGrid").innerHTML = alivePlayers.map((player, index) => {
+        const lock = locked.get(player.id);
+        const selected = state.picked.includes(player.id);
+        const style = lock ? `style="background:${lock.color};"` : `style="animation-delay:${Math.min(index * 22, 240)}ms"`;
+        const className = ["player-card", selected ? "selected" : "", lock ? "locked" : ""].filter(Boolean).join(" ");
+        const meta = lock ? `Ομάδα ${lock.number}` : (selected ? "Επιλεγμένος" : "Διαθέσιμος");
+        return `
+          <button class="${className}" ${style} data-player="${player.id}" ${lock ? "disabled" : ""}>
+            ${avatarHTML(player, "tiny-avatar")}
+            <span>
+              <span class="player-name">${escapeAttr(player.name)}</span>
+              <span class="player-meta">${meta}</span>
+            </span>
+          </button>
+        `;
+      }).join("");
+      document.querySelectorAll("[data-player]").forEach((button) => button.addEventListener("click", () => togglePick(button.dataset.player)));
+      renderGroups();
+      renderCandidates();
+    }
+
+    function togglePick(id) {
+      if (state.groups.some((group) => group.ids.includes(id))) return;
+      const exists = state.picked.includes(id);
+      state.picked = exists ? state.picked.filter((pickedId) => pickedId !== id) : [...state.picked, id];
+      blip(exists ? 280 : 660, .05, "sine");
+      if (state.picked.length === state.target) return lockGroup();
+      renderValidation();
+    }
+
+    function lockGroup() {
+      const color = colors[state.groups.length % colors.length];
+      state.groups.push({ ids: [...state.picked], color });
+      state.picked = [];
+      blip(980, .14, "triangle");
+      speak(`Group ${state.groups.length} locked.`, .98, .96);
+      renderValidation();
+    }
+
+    function renderGroups() {
+      $("groupCount").textContent = `${state.groups.length} ομάδες`;
+      $("groupList").innerHTML = state.groups.length ? state.groups.map((group, index) => {
+        const names = group.ids.map((id) => playerById(id).name).join(", ");
+        return `<div class="group-chip" style="background:${group.color};"><span class="names">#${index + 1} ${escapeAttr(names)}</span></div>`;
+      }).join("") : `<div class="empty">Καμία έγκυρη ομάδα</div>`;
+    }
+
+    function candidatePlayers() {
+      const lockedIds = new Set(state.groups.flatMap((group) => group.ids));
+      return activePlayers().filter((player) => !lockedIds.has(player.id));
+    }
+
+    function renderCandidates() {
+      const candidates = candidatePlayers();
+      $("candidateCount").textContent = `${candidates.length} υποψήφιοι`;
+      $("candidateList").innerHTML = candidates.length ? candidates.map((player) => `
+        <div class="candidate-chip">
+          ${avatarHTML(player, "tiny-avatar")}
+          <span class="names">${escapeAttr(player.name)}</span>
+        </div>
+      `).join("") : `<div class="empty">Όλοι είναι ασφαλείς</div>`;
+      $("confirmEliminations").disabled = !candidates.length;
+    }
+
+    function undoGroup() {
+      state.groups.pop();
+      blip(240, .08, "sawtooth");
+      renderValidation();
+    }
+
+    function confirmEliminations() {
+      const candidates = candidatePlayers();
+      candidates.forEach((player) => {
+        player.alive = false;
+        player.eliminatedRound = state.round;
+        state.placementOrder += 1;
+        state.placements.push({
+          id: player.id,
+          round: state.round,
+          order: state.placementOrder
+        });
+      });
+      showEliminations(candidates);
+    }
+
+    function showEliminations(candidates) {
+      const names = candidates.map((player) => player.name);
+      $("eliminationTitle").textContent = "Αποχώρηση";
+      $("eliminationLine").textContent = names.length
+        ? names.map((name) => `${name} αποχώρησε`).join(" - ")
+        : "Καμία αποχώρηση";
+      $("eliminatedList").innerHTML = candidates.map((player, index) => `
+        <div class="eliminated-card" style="animation-delay:${index * 160}ms">
+          ${avatarHTML(player)}
+          <span class="player-name">${escapeAttr(player.name)}</span>
+        </div>
+      `).join("");
+      showView("eliminationView");
+      flash("OUT");
+      blip(120, .24, "sawtooth");
+      startEliminationCountdown();
+      const lines = candidates.length
+        ? candidates.map((player) => `${player.name}. Eliminated.`)
+        : ["No contestants eliminated."];
+      let done = false;
+      const proceed = () => {
+        if (done) return;
+        done = true;
+        window.clearInterval(state.eliminationTimer);
+        state.eliminationTimer = null;
+        nextRound();
+      };
+      speakSequence(lines);
+      window.setTimeout(proceed, 10000);
+    }
+
+    function startEliminationCountdown() {
+      window.clearInterval(state.eliminationTimer);
+      let remaining = 10;
+      $("eliminationCountdown").textContent = remaining;
+      state.eliminationTimer = window.setInterval(() => {
+        remaining -= 1;
+        $("eliminationCountdown").textContent = Math.max(remaining, 0);
+        if (remaining > 0 && remaining <= 3) {
+          blip(720 + remaining * 90, .07, "square");
+        }
+        if (remaining <= 0) window.clearInterval(state.eliminationTimer);
+      }, 1000);
+    }
+
+    function finishGame() {
+      const finalists = activePlayers();
+      $("finalTitle").textContent = finalists.length === 2 ? "Τελική δυάδα" : "Επιζών";
+      $("finalList").innerHTML = finalists.map((player) => `
+        <div class="finalist">
+          ${avatarHTML(player)}
+          <div class="player-name">${escapeAttr(player.name)}</div>
+        </div>
+      `).join("");
+      renderPlacements(finalists);
+      speak("The game is complete. The final ranking is ready.", .9, .9);
+      playVictoryMusic();
+      showView("gameOverView");
+    }
+
+    function renderPlacements(finalists) {
+      const finalistIds = new Set(finalists.map((player) => player.id));
+      const eliminated = state.placements
+        .slice()
+        .sort((a, b) => b.round - a.round || b.order - a.order)
+        .map((entry) => ({ ...entry, player: playerById(entry.id) }))
+        .filter((entry) => entry.player && !finalistIds.has(entry.player.id));
+      const ranking = [
+        ...finalists.map((player) => ({
+          player,
+          place: "#1",
+          meta: "Τελικός επιζών",
+          winner: true
+        })),
+        ...eliminated.map((entry, index) => ({
+          player: entry.player,
+          place: `#${finalists.length + index + 1}`,
+          meta: `Αποχώρησε στον γύρο ${entry.round}`,
+          winner: false
+        }))
+      ];
+      $("placementsBoard").innerHTML = ranking.map((entry, index) => `
+        <article class="placement-card ${entry.winner ? "winner" : "out"}" style="animation-delay:${Math.min(index * 70, 600)}ms">
+          ${avatarHTML(entry.player)}
+          <div class="placement-place">${entry.place}</div>
+          <div class="player-name">${escapeAttr(entry.player.name)}</div>
+          <div class="placement-meta">${entry.meta}</div>
+        </article>
+      `).join("");
+    }
+
+    $("minusPlayers").addEventListener("click", () => syncEditorCount(state.setupCount - 1));
+    $("plusPlayers").addEventListener("click", () => syncEditorCount(state.setupCount + 1));
+    $("clearSelection").addEventListener("click", clearSelection);
+    $("startGame").addEventListener("click", startGame);
+    $("endTimer").addEventListener("click", endTimer);
+    $("clearPick").addEventListener("click", () => { state.picked = []; renderValidation(); });
+    $("undoGroup").addEventListener("click", undoGroup);
+    $("confirmEliminations").addEventListener("click", confirmEliminations);
+    $("newGame").addEventListener("click", () => {
+      state.round = 0;
+      state.placements = [];
+      state.placementOrder = 0;
+      stopRoundMusic();
+      stopVictoryMusic();
+      state.players.forEach((player) => { player.alive = player.selected; player.eliminatedRound = null; });
+      syncEditorCount(state.setupCount);
+      showView("setupView");
+    });
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      $("installApp").classList.add("ready");
+    });
+    $("installApp").addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      $("installApp").classList.remove("ready");
+    });
+    if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(() => {}));
+
+    state.players = spirits.map((_, index) => makeSpiritPlayer(index));
+    syncEditorCount(state.setupCount);
+  </script>
+</body>
+</html>

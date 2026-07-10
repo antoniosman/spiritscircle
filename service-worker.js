@@ -1,4 +1,4 @@
-const CACHE_NAME = "circle-rush-v7";
+const CACHE_NAME = "circle-rush-v8";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,9 @@ const APP_SHELL = [
   "./icons/icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon-32x32.png",
+  "./icons/favicon-16x16.png",
   "./assets/audio/round_theme.mp3",
   "./assets/audio/victory_theme.mp3",
   "./assets/characters/char_alex.webp",

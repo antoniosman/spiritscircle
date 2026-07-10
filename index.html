@@ -8,8 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="icon" href="./icons/favicon-32x32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="./icons/favicon-16x16.png" sizes="16x16" type="image/png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <title>Κύκλος Επιβίωσης</title>
   <style>
     :root {
@@ -723,13 +724,18 @@
 
     function ttsText(value) {
       return String(value)
+        .replaceAll("Alex", "Ahlex")
         .replaceAll("Rino", "Reeno")
         .replaceAll("Demarin", "Deh mareen")
-        .replaceAll("Elisa", "Elisa Lanchava")
+        .replaceAll("Billy", "Beelee")
+        .replaceAll("Elisa", "Eliso Lanchava")
+        .replaceAll("Evelyn", "Evelin")
         .replaceAll("Sargenie", "Sarjeenee")
         .replaceAll("Sorina", "Soreena")
         .replaceAll("Evaggelia", "Evangelia")
-        .replaceAll("Zoe", "Zoey")
+        .replaceAll("Zoe", "Zo ee")
+        .replaceAll("Smaragda", "Smaragdenia")
+        .replaceAll("Jasmine", "Yasmeen")
         .replaceAll("Pauline", "Polin")
         .replaceAll("Ester", "Esther")
         .replaceAll("Ian", "Ee an")

@@ -51,7 +51,7 @@
     button.secondary { background: rgba(255, 255, 255, .08); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
     button.danger { background: linear-gradient(135deg, var(--danger), #ff9a3d); color: #180305; }
     button.icon { width: 46px; padding: 0; display: inline-grid; place-items: center; font-size: 1.35rem; }
-    input[type="text"] {
+    input[type="text"], input[type="file"] {
       width: 100%;
       min-height: 44px;
       border-radius: var(--radius);
@@ -60,6 +60,12 @@
       color: var(--ink);
       padding: 0 12px;
       outline: none;
+    }
+    input[type="file"] {
+      padding: 10px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 850;
     }
     input:focus, button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
@@ -170,6 +176,20 @@
     .count-label { display: block; margin-top: 5px; color: var(--muted); font-size: .76rem; font-weight: 900; text-transform: uppercase; }
     .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .actions.single { grid-template-columns: 1fr; }
+    .custom-creator {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid rgba(22,242,165,.22);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(22,242,165,.08), rgba(255,47,134,.08));
+    }
+    .custom-creator .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
 
     .player-editor, .player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; }
     .editor-card, .player-card, .finalist {
@@ -543,6 +563,17 @@
                 </div>
                 <button class="secondary" id="clearSelection">Καθαρισμός</button>
               </div>
+              <div class="custom-creator">
+                <div>
+                  <h2 style="font-size: .95rem;">Custom παίκτης</h2>
+                  <p class="subline">Φτιάξε δικό σου όνομα και προαιρετικό avatar.</p>
+                </div>
+                <div class="row">
+                  <input type="text" id="customName" placeholder="Όνομα παίκτη" aria-label="Όνομα custom παίκτη">
+                  <input type="file" id="customAvatar" accept="image/*" aria-label="Avatar custom παίκτη">
+                </div>
+                <button class="secondary" id="addCustomPlayer">Προσθήκη custom παίκτη</button>
+              </div>
               <div class="player-editor" id="playerEditor"></div>
             </div>
           </div>
@@ -901,6 +932,20 @@
       };
     }
 
+    function makeCustomPlayer(name, avatar = "") {
+      const index = state.players.length;
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : `custom-${Date.now()}-${index}`,
+        order: index,
+        name,
+        avatar,
+        selected: selectedPlayers().length < state.setupCount,
+        alive: true,
+        eliminatedRound: null,
+        custom: true
+      };
+    }
+
     function syncEditorCount(nextCount) {
       state.setupCount = Math.max(minPlayers, Math.min(maxPlayers, nextCount));
       $("playerCountValue").textContent = state.setupCount;
@@ -953,6 +998,34 @@
       document.querySelectorAll("[data-toggle-spirit]").forEach((button) => {
         button.addEventListener("click", (event) => toggleSpirit(button.dataset.toggleSpirit, event.currentTarget));
       });
+    }
+
+    function addCustomPlayer() {
+      const input = $("customName");
+      const fileInput = $("customAvatar");
+      const name = input.value.trim();
+      if (!name) {
+        showToast("Γράψε όνομα για τον custom παίκτη.");
+        input.focus();
+        return;
+      }
+      const finish = (avatar = "") => {
+        const player = makeCustomPlayer(name, avatar);
+        state.players.push(player);
+        renderEditor();
+        updateHeader();
+        input.value = "";
+        fileInput.value = "";
+        showToast(player.selected ? `${name} μπήκε στο παιχνίδι.` : `${name} προστέθηκε στο roster.`);
+      };
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        finish();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => finish(String(reader.result));
+      reader.readAsDataURL(file);
     }
 
     function toggleSpirit(id, button) {
@@ -1262,6 +1335,10 @@
     $("minusPlayers").addEventListener("click", () => syncEditorCount(state.setupCount - 1));
     $("plusPlayers").addEventListener("click", () => syncEditorCount(state.setupCount + 1));
     $("clearSelection").addEventListener("click", clearSelection);
+    $("addCustomPlayer").addEventListener("click", addCustomPlayer);
+    $("customName").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addCustomPlayer();
+    });
     $("startGame").addEventListener("click", startGame);
     $("endTimer").addEventListener("click", endTimer);
     $("clearPick").addEventListener("click", () => { state.picked = []; renderValidation(); });

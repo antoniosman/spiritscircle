@@ -1,4 +1,4 @@
-const CACHE_NAME = "circle-rush-v11";
+const CACHE_NAME = "circle-rush-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
